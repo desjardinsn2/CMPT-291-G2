@@ -1,0 +1,84 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Data.SqlClient;
+
+namespace ProjectReport
+{
+    public partial class Form1 : Form
+    {
+        string connectionString = @"Data Source=LAPTOP-7R60URD2;Initial Catalog=CMPT291Project;Integrated Security=True";
+        SqlDataAdapter sqlDa;
+        public Form1() 
+        {
+            SqlConnection sqlCon = new SqlConnection(connectionString);
+            sqlCon.Open();
+            InitializeComponent();
+            ComBox.Items.Add("Total Past Reservations");
+            ComBox.Items.Add("Total Past Reservations By Customer");
+            ComBox.Items.Add("Total Current Reservations");
+            ComBox.Items.Add("Total Current Reservations By Customer");
+            ComBox.Items.Add("Total Current Reservations By Employee");
+            ComBox.Items.Add("Customer With Most Past Reservations");
+            ComBox.Items.Add("Number Of Current Reservations By Vehicle Type");
+            ComBox.Items.Add("Total Current Reservations By Branch");
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            using (SqlConnection sqlCon = new SqlConnection(connectionString))
+            {
+                if (ComBox.Text.Equals("Total Past Reservations")){
+                    sqlDa = new SqlDataAdapter("select sum(no_of_times_reserved) as Total_Past_Reservations from Customer", sqlCon);
+                }
+                if (ComBox.Text.Equals("Total Past Reservations By Customer"))
+                {
+                    sqlDa = new SqlDataAdapter("select customer_name, sum(no_of_times_reserved) as Num_Completed_Reservations from customer group by customer_name", sqlCon);
+                }
+                if (ComBox.Text.Equals("Total Current Reservations"))
+                {
+                    sqlDa = new SqlDataAdapter("select count(reservation_id) as Total_Current_Reservations from Reservation", sqlCon);
+                }
+                if (ComBox.Text.Equals("Total Current Reservations By Customer"))
+                {
+                    sqlDa = new SqlDataAdapter("select customer_name, count(reservation_id) as Num_Current_Reservations from (Reservation full join Customer on Reservation.customer_id = Customer.customer_id) group by customer_name", sqlCon);
+                }
+                if (ComBox.Text.Equals("Total Current Reservations By Employee"))
+                {
+                    sqlDa = new SqlDataAdapter("select Employee.employee_name, count(reservation_id) as Num_Current_Reservations from (reservation full join Employee on reservation.employee_id = employee.employee_id) group by employee_name", sqlCon);
+                }
+                if (ComBox.Text.Equals("Customer with most past reservation"))
+                {
+                    sqlDa = new SqlDataAdapter("select customer_name as Most_Frequent_Customer, no_of_times_reserved from customer, (select MAX(no_of_times_reserved) as Most_Reservations from customer) as newtable where no_of_times_reserved = Most_Reservations", sqlCon);
+                }
+                if (ComBox.Text.Equals("Num pending rentals by vehicle type"))
+                {
+                    sqlDa = new SqlDataAdapter("select type_name, count(reservation_id) as Num_Current_Reservations from Reservation left join car on reservation.car_id = car.car_id left join type on type.type_id = car.type_id group by type_name", sqlCon);
+                }
+                if (ComBox.Text.Equals("Reservations per branch"))
+                {
+                    sqlDa = new SqlDataAdapter("select branch_name, count(reservation_id) as Num_Current_Reservations from Reservation full join branch on Reservation.pick_up_branch_id = branch.branch_id group by branch_name", sqlCon);
+                }
+                /*Template to add more of these bitches*/
+                /*if (ComBox.Text.Equals(""))
+                {
+                    sqlDa = new SqlDataAdapter("", sqlCon);
+                }*/
+                DataTable dtbl = new DataTable();
+                sqlDa.Fill(dtbl);
+                DataGrid.DataSource = dtbl;
+            }
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            
+        }
+    }
+}
